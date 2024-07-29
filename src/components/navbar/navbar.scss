@@ -1,0 +1,26 @@
+.navbar{
+    height: 50px;
+    border-bottom: 0.5px solid rgb(216, 210, 210);
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #555;
+
+    .wrapper{
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        justify-content: center;
+
+        .title{
+                 font-size: 20px;
+                font-weight: bold;
+                color: #725ac5;
+                align-items: center;
+                justify-content: center;
+        }
+
+       
+    }
+}
