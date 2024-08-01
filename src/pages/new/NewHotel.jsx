@@ -9,8 +9,15 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 const NewHotel = () => {
-  const [file, setFile] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
+  // State untuk gambar utama hotel
+  const [mainFile, setMainFile] = useState(null);
+  const [mainPreviewURL, setMainPreviewURL] = useState(null);
+
+  // State untuk gambar tambahan hotel
+  const [additionalFiles, setAdditionalFiles] = useState([]);
+  const [additionalPreviewURLs, setAdditionalPreviewURLs] = useState([]);
+
+  // State untuk data hotel
   const [hotelData, setHotelData] = useState({
     name: "",
     contact: "",
@@ -18,299 +25,387 @@ const NewHotel = () => {
     facilities: [],
     price: "",
   });
+
+  // State untuk kamar-kamar hotel
   const [rooms, setRooms] = useState([]);
   const [currentRoom, setCurrentRoom] = useState({
     type: "",
     pricePerNight: "",
     available: true,
     facilities: [],
+    image: null,
   });
+
+  // State untuk error dan UI
   const [errors, setErrors] = useState({});
   const [isAddingRoom, setIsAddingRoom] = useState(false);
   const [currentFacility, setCurrentFacility] = useState("");
   const [currentRoomFacility, setCurrentRoomFacility] = useState("");
+
   const navigate = useNavigate();
 
-  const handleHotelChange = (e) => {
-    const { id, value } = e.target;
-    if (id === "price") {
-      const numValue = value.replace(/^0+/, '').replace(/[^0-9.]/g, '');
-      setHotelData({ ...hotelData, [id]: numValue });
-    } else {
-      setHotelData({ ...hotelData, [id]: value });
-    }
-    setErrors({ ...errors, [id]: "" });
-  };
+// Handler untuk perubahan data hotel
+const handleHotelChange = (e) => {
+  const { id, value } = e.target;
+  if (id === "price") {
+    const numValue = value.replace(/^0+/, '').replace(/[^0-9.]/g, '');
+    setHotelData({ ...hotelData, [id]: numValue });
+  } else {
+    setHotelData({ ...hotelData, [id]: value });
+  }
+  setErrors({ ...errors, [id]: "" });
+};
 
-  const handleRoomChange = (e) => {
-    const { id, value, type, checked } = e.target;
-    if (id === "pricePerNight") {
-      const numValue = value.replace(/[^0-9.]/g, '');
-      setCurrentRoom({ ...currentRoom, [id]: numValue });
-    } else {
-      setCurrentRoom({
-        ...currentRoom,
-        [id]: type === 'checkbox' ? checked : value.trim()
-      });
-    }
-    setErrors({ ...errors, [id]: "" });
-  };
+// Handler untuk perubahan gambar utama hotel
+const handleMainFileChange = (e) => {
+  const selectedFile = e.target.files[0];
+  setMainFile(selectedFile);
+  setErrors({ ...errors, mainFile: "" });
+  
+  if (selectedFile) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMainPreviewURL(reader.result);
+    };
+    reader.readAsDataURL(selectedFile);
+  } else {
+    setMainPreviewURL(null);
+  }
+};
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    setErrors({ ...errors, file: "" });
-    
-    if (selectedFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewURL(reader.result);
-      };
-      reader.readAsDataURL(selectedFile);
-    } else {
-      setPreviewURL(null);
-    }
-  };
+// Handler untuk perubahan gambar tambahan hotel
+const handleAdditionalFilesChange = (e) => {
+  const selectedFiles = Array.from(e.target.files);
+  setAdditionalFiles(selectedFiles);
+  setErrors({ ...errors, additionalFiles: "" });
+  
+  const previewURLs = selectedFiles.map(file => URL.createObjectURL(file));
+  setAdditionalPreviewURLs(previewURLs);
+};
 
-  const handleAddFacility = () => {
-    if (currentFacility.trim()) {
-      setHotelData((prev) => ({
-        ...prev,
-        facilities: [...prev.facilities, currentFacility.trim()],
-      }));
-      setCurrentFacility("");
-    }
-  };
-
-  const handleRemoveFacility = (index) => {
+// Handler untuk menambah fasilitas hotel
+const handleAddFacility = () => {
+  if (currentFacility.trim()) {
     setHotelData((prev) => ({
       ...prev,
-      facilities: prev.facilities.filter((_, i) => i !== index),
+      facilities: [...prev.facilities, currentFacility.trim()],
     }));
-  };
+    setCurrentFacility("");
+  }
+};
 
-  const handleAddRoomFacility = () => {
-    if (currentRoomFacility.trim()) {
-      setCurrentRoom(prevRoom => ({
-        ...prevRoom,
-        facilities: [...prevRoom.facilities, currentRoomFacility.trim()]
-      }));
-      setCurrentRoomFacility("");
-    }
-  };
+// Handler untuk menghapus fasilitas hotel
+const handleRemoveFacility = (index) => {
+  setHotelData((prev) => ({
+    ...prev,
+    facilities: prev.facilities.filter((_, i) => i !== index),
+  }));
+};
 
-  const handleRemoveRoomFacility = (index) => {
+// Handler untuk perubahan data kamar
+const handleRoomChange = (e) => {
+  const { id, value, type, checked } = e.target;
+  if (id === "pricePerNight") {
+    const numValue = value.replace(/[^0-9.]/g, '');
+    setCurrentRoom({ ...currentRoom, [id]: numValue });
+  } else {
+    setCurrentRoom({
+      ...currentRoom,
+      [id]: type === 'checkbox' ? checked : value.trim()
+    });
+  }
+  setErrors({ ...errors, [id]: "" });
+};
+
+// Handler untuk perubahan gambar kamar
+const handleRoomImageChange = (e) => {
+  const file = e.target.files[0];
+  setCurrentRoom(prevRoom => ({
+    ...prevRoom,
+    image: file
+  }));
+  setErrors({ ...errors, roomImage: "" });
+};
+
+// Handler untuk menambah fasilitas kamar
+const handleAddRoomFacility = () => {
+  if (currentRoomFacility.trim()) {
     setCurrentRoom(prevRoom => ({
       ...prevRoom,
-      facilities: prevRoom.facilities.filter((_, i) => i !== index)
+      facilities: [...prevRoom.facilities, currentRoomFacility.trim()]
     }));
-  };
+    setCurrentRoomFacility("");
+  }
+};
 
-  const handleAddRoom = () => {
-    const newErrors = {};
-    if (!currentRoom.type.trim()) newErrors.roomType = "Room type is required";
-    if (!currentRoom.pricePerNight || isNaN(parseFloat(currentRoom.pricePerNight))) {
-      newErrors.roomPrice = "Valid price per night is required";
+// Handler untuk menghapus fasilitas kamar
+const handleRemoveRoomFacility = (index) => {
+  setCurrentRoom(prevRoom => ({
+    ...prevRoom,
+    facilities: prevRoom.facilities.filter((_, i) => i !== index)
+  }));
+};
+
+// Handler untuk menambah kamar
+const handleAddRoom = async () => {
+  const newErrors = {};
+  if (!currentRoom.type.trim()) newErrors.roomType = "Room type is required";
+  if (!currentRoom.pricePerNight || isNaN(parseFloat(currentRoom.pricePerNight))) {
+    newErrors.roomPrice = "Valid price per night is required";
+  }
+  if (!currentRoom.image) newErrors.roomImage = "Room image is required";
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    return;
+  }
+
+  try {
+    let imageUrl = "";
+    if (currentRoom.image) {
+      const storageRef = ref(storage, `rooms/${Date.now()}_${currentRoom.image.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, currentRoom.image);
+      await uploadTask;
+      imageUrl = await getDownloadURL(storageRef);
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(prev => ({ ...prev, ...newErrors }));
-      return;
-    }
-
-    setRooms([...rooms, { ...currentRoom, pricePerNight: parseFloat(currentRoom.pricePerNight) }]);
+    setRooms([...rooms, { 
+      ...currentRoom, 
+      pricePerNight: parseFloat(currentRoom.pricePerNight),
+      image: imageUrl
+    }]);
     setCurrentRoom({
       type: "",
       pricePerNight: "",
       available: true,
       facilities: [],
+      image: null,
     });
     setIsAddingRoom(false);
     setErrors({});
+  } catch (error) {
+    console.error("Error adding room: ", error);
+    toast.error("Failed to add room. Please try again.");
+  }
+};
+// Fungsi untuk menambah kamar ke Firestore
+const addRoom = async (roomData, hotelId) => {
+  if (!roomData.type || roomData.type.trim() === "") {
+    throw new Error("Room type is required");
+  }
+  if (!roomData.pricePerNight || isNaN(parseFloat(roomData.pricePerNight))) {
+    throw new Error("Valid price per night is required");
+  }
+
+  const roomToAdd = {
+    type: roomData.type.trim(),
+    pricePerNight: parseFloat(roomData.pricePerNight),
+    available: roomData.available ?? true,
+    facilities: Array.isArray(roomData.facilities) ? roomData.facilities : [],
+    image: roomData.image,
+    createdAt: serverTimestamp(),
   };
 
-  const addRoom = async (roomData, hotelId) => {
-    if (!roomData.type || roomData.type.trim() === "") {
-      throw new Error("Room type is required");
-    }
-    if (!roomData.pricePerNight || isNaN(parseFloat(roomData.pricePerNight))) {
-      throw new Error("Valid price per night is required");
-    }
+  await addDoc(collection(db, "hotels", hotelId, "rooms"), roomToAdd);
+};
 
-    const roomToAdd = {
-      type: roomData.type.trim(),
-      pricePerNight: parseFloat(roomData.pricePerNight),
-      available: roomData.available ?? true,
-      facilities: Array.isArray(roomData.facilities) ? roomData.facilities : [],
-      createdAt: serverTimestamp(),
-    };
+// Handler untuk submit form
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const newErrors = {};
 
-    await addDoc(collection(db, "hotels", hotelId, "rooms"), roomToAdd);
-  };
+  if (!mainFile) newErrors.mainFile = "Main hotel image is required";
+  if (!hotelData.name) newErrors.name = "Name is required";
+  if (!hotelData.contact) newErrors.contact = "Contact is required";
+  if (!hotelData.address) newErrors.address = "Address is required";
+  if (!hotelData.price) newErrors.price = "Price is required";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = {};
+  if (rooms.length === 0) {
+    newErrors.rooms = "At least one room is required";
+  }
 
-    if (!file) newErrors.file = "Image is required";
-    if (!hotelData.name) newErrors.name = "Name is required";
-    if (!hotelData.contact) newErrors.contact = "Contact is required";
-    if (!hotelData.address) newErrors.address = "Address is required";
-    if (!hotelData.price) newErrors.price = "Price is required";
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    return;
+  }
 
-    if (rooms.length === 0) {
-      newErrors.rooms = "At least one room is required";
-    }
+  try {
+    let mainFileUrl = "";
+    let additionalFileUrls = [];
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    if (mainFile) {
+      const storageRef = ref(storage, `hotels/${Date.now()}_${mainFile.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, mainFile);
+      await uploadTask;
+      mainFileUrl = await getDownloadURL(storageRef);
     }
 
-    try {
-      let fileUrl = "";
-      if (file) {
+    if (additionalFiles.length > 0) {
+      for (const file of additionalFiles) {
         const storageRef = ref(storage, `hotels/${Date.now()}_${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
-
         await uploadTask;
-        fileUrl = await getDownloadURL(storageRef);
+        const url = await getDownloadURL(storageRef);
+        additionalFileUrls.push(url);
       }
-
-      const hotelDocRef = await addDoc(collection(db, "hotels"), {
-        ...hotelData,
-        price: parseFloat(hotelData.price),
-        image: fileUrl,
-        createdAt: serverTimestamp(),
-      });
-
-      for (const room of rooms) {
-        try {
-          await addRoom(room, hotelDocRef.id);
-        } catch (roomError) {
-          console.error(`Error adding room: ${roomError.message}`);
-          toast.error(`Failed to add room: ${room.type}. ${roomError.message}`);
-        }
-      }
-
-      toast.success("Hotel and rooms added successfully!");
-      navigate("/marketnearme");
-    } catch (error) {
-      toast.error("Failed to add hotel. Please try again.");
-      console.error("Error adding hotel: ", error);
     }
-  };
 
-  return (
-    <div className="new">
-      <Sidebar />
-      <div className="newContainer">
-        <Navbar />
-        <div className="top">
-          <h1>Add New Hotel</h1>
+    const hotelDocRef = await addDoc(collection(db, "hotels"), {
+      ...hotelData,
+      price: parseFloat(hotelData.price),
+      imageUrl: mainFileUrl,
+      imageUrls: additionalFileUrls,
+      createdAt: serverTimestamp(),
+    });
+
+    for (const room of rooms) {
+      try {
+        await addRoom(room, hotelDocRef.id);
+      } catch (roomError) {
+        console.error(`Error adding room: ${roomError.message}`);
+        toast.error(`Failed to add room: ${room.type}. ${roomError.message}`);
+      }
+    }
+
+    toast.success("Hotel and rooms added successfully!");
+    navigate("/marketnearme");
+  } catch (error) {
+    toast.error("Failed to add hotel. Please try again.");
+    console.error("Error adding hotel: ", error);
+  }
+};
+
+// Render komponen
+return (
+  <div className="new">
+    <Sidebar />
+    <div className="newContainer">
+      <Navbar />
+      <div className="top">
+        <h1>Add New Hotel</h1>
+      </div>
+      <div className="bottom">
+        <div className="left">
+          <img
+            src={
+              mainPreviewURL
+                ? mainPreviewURL
+                : "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
+            }
+            alt=""
+          />
         </div>
-        <div className="bottom">
-          <div className="left">
-            <img
-              src={
-                previewURL
-                  ? previewURL
-                  : "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
-              }
-              alt=""
-            />
-          </div>
-          <div className="right">
-            <form onSubmit={handleSubmit}>
-              <div className="formInput">
-                <label htmlFor="file">
-                  Image: <span style={{color: "red"}}>*</span>
-                </label>
-                <input
-                  type="file"
-                  id="file"
-                  onChange={handleFileChange}
-                  style={{ border: errors.file ? "1px solid red" : "" }}
-                />
-                {errors.file && <span className="error">{errors.file}</span>}
-              </div>
+        <div className="right">
+          <form onSubmit={handleSubmit}>
+            {/* Input untuk gambar utama hotel */}
+            <div className="formInput">
+              <label htmlFor="mainFile">
+                Main Hotel Image: <span style={{color: "red"}}>*</span>
+              </label>
+              <input
+                type="file"
+                id="mainFile"
+                onChange={handleMainFileChange}
+                style={{ border: errors.mainFile ? "1px solid red" : "" }}
+              />
+              {errors.mainFile && <span className="error">{errors.mainFile}</span>}
+            </div>
 
-              <div className="formInput">
-                <label>Name <span style={{color: "red"}}>*</span></label>
+            {/* Input untuk gambar tambahan hotel */}
+            <div className="formInput">
+              <label htmlFor="additionalFiles">
+                Additional Hotel Images:
+              </label>
+              <input
+                type="file"
+                id="additionalFiles"
+                multiple
+                onChange={handleAdditionalFilesChange}
+              />
+            </div>
+
+            {/* Input untuk nama hotel */}
+            <div className="formInput">
+              <label>Name <span style={{color: "red"}}>*</span></label>
+              <input
+                type="text"
+                id="name"
+                value={hotelData.name}
+                onChange={handleHotelChange}
+                style={{ border: errors.name ? "1px solid red" : "" }}
+              />
+              {errors.name && <span className="error">{errors.name}</span>}
+            </div>
+
+            {/* Input untuk kontak hotel */}
+            <div className="formInput">
+              <label>Contact <span style={{color: "red"}}>*</span></label>
+              <input
+                type="text"
+                id="contact"
+                value={hotelData.contact}
+                onChange={handleHotelChange}
+                style={{ border: errors.contact ? "1px solid red" : "" }}
+              />
+              {errors.contact && <span className="error">{errors.contact}</span>}
+            </div>
+
+            {/* Input untuk alamat hotel */}
+            <div className="formInput">
+              <label>Address <span style={{color: "red"}}>*</span></label>
+              <input
+                type="text"
+                id="address"
+                value={hotelData.address}
+                onChange={handleHotelChange}
+                style={{ border: errors.address ? "1px solid red" : "" }}
+              />
+              {errors.address && <span className="error">{errors.address}</span>}
+            </div>
+
+            {/* Input untuk harga hotel */}
+            <div className="formInput">
+              <label>Price <span style={{color: "red"}}>*</span></label>
+              <input
+                type="text"
+                id="price"
+                value={hotelData.price}
+                onChange={handleHotelChange}
+                style={{ border: errors.price ? "1px solid red" : "" }}
+              />
+              {errors.price && <span className="error">{errors.price}</span>}
+            </div>
+
+            {/* Input untuk fasilitas hotel */}
+            <div className="formInput">
+              <label>Hotel Facilities</label>
+              <div style={{ display: "flex", alignItems: "center" }}>
                 <input
                   type="text"
-                  id="name"
-                  value={hotelData.name}
-                  onChange={handleHotelChange}
-                  style={{ border: errors.name ? "1px solid red" : "" }}
+                  value={currentFacility}
+                  onChange={(e) => setCurrentFacility(e.target.value)}
                 />
-                {errors.name && <span className="error">{errors.name}</span>}
+                <button type="button" onClick={handleAddFacility}>Add</button>
               </div>
-
-              <div className="formInput">
-                <label>Contact <span style={{color: "red"}}>*</span></label>
-                <input
-                  type="text"
-                  id="contact"
-                  value={hotelData.contact}
-                  onChange={handleHotelChange}
-                  style={{ border: errors.contact ? "1px solid red" : "" }}
-                />
-                {errors.contact && <span className="error">{errors.contact}</span>}
-              </div>
-
-              <div className="formInput">
-                <label>Address <span style={{color: "red"}}>*</span></label>
-                <input
-                  type="text"
-                  id="address"
-                  value={hotelData.address}
-                  onChange={handleHotelChange}
-                  style={{ border: errors.address ? "1px solid red" : "" }}
-                />
-                {errors.address && <span className="error">{errors.address}</span>}
-              </div>
-
-              <div className="formInput">
-                <label>Price <span style={{color: "red"}}>*</span></label>
-                <input
-                  type="text"
-                  id="price"
-                  value={hotelData.price}
-                  onChange={handleHotelChange}
-                  style={{ border: errors.price ? "1px solid red" : "" }}
-                />
-                {errors.price && <span className="error">{errors.price}</span>}
-              </div>
-
-              <div className="formInput">
-                <label>Hotel Facilities</label>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <input
-                    type="text"
-                    value={currentFacility}
-                    onChange={(e) => setCurrentFacility(e.target.value)}
-                  />
-                  <button type="button" onClick={handleAddFacility}>Add</button>
-                </div>
-                <ul>
-                  {hotelData.facilities.map((facility, index) => (
-                    <li key={index}>
-                      {facility}
-                      <button type="button" onClick={() => handleRemoveFacility(index)}>Remove</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="formInput">
-                <label>Rooms</label>
-                {rooms.map((room, index) => (
-                  <div key={index}>
-                    <p>Type: {room.type}, Price: {room.pricePerNight}</p>
-                  </div>
+              <ul>
+                {hotelData.facilities.map((facility, index) => (
+                  <li key={index}>
+                    {facility}
+                    <button type="button" onClick={() => handleRemoveFacility(index)}>Remove</button>
+                  </li>
                 ))}
-                {isAddingRoom ? (
+              </ul>
+            </div>
+
+            {/* Input untuk kamar-kamar hotel */}
+            <div className="formInput">
+              <label>Rooms</label>
+              {rooms.map((room, index) => (
+                <div key={index}>
+                  <p>Type: {room.type}, Price: {room.pricePerNight}</p>
+                </div>
+              ))}
+              {isAddingRoom ? (
                   <div>
                     <input
                       type="text"
@@ -328,6 +423,14 @@ const NewHotel = () => {
                       style={{ border: errors.roomPrice ? "1px solid red" : "" }}
                     />
                     {errors.roomPrice && <span className="error">{errors.roomPrice}</span>}
+                    <div>
+                      <input
+                        type="file"
+                        onChange={handleRoomImageChange}
+                        style={{ border: errors.roomImage ? "1px solid red" : "" }}
+                      />
+                      {errors.roomImage && <span className="error">{errors.roomImage}</span>}
+                    </div>
                     <div>
                       <input
                         type="text"

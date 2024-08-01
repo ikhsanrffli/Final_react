@@ -88,7 +88,7 @@ const Sidebar = () => {
           <Link to="/marketnearme" style={{ textDecoration: "none" }}>
             <li>
               <HotelOutlined className="icon" />
-              <span>Hotel Near me</span>
+              <span>Hotel</span>
             </li>
           </Link>
           {/* <Link to="/pricelisting" style={{ textDecoration: "none" }}>
@@ -99,8 +99,8 @@ const Sidebar = () => {
           </Link> */}
           <Link to="/fertilizers" style={{ textDecoration: "none" }}>
             <li>
-              <BeachAccessOutlined className="icon" />
-              <span>Destination</span>
+              <MonetizationOnOutlinedIcon className="icon" />
+              <span>Payment</span>
             </li>
           </Link>
 

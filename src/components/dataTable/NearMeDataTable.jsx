@@ -15,6 +15,7 @@ const NearMeDataTable = () => {
   const [data, setData] = useState([]);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,9 +27,11 @@ const NearMeDataTable = () => {
           ...doc.data()
         }));
         setData(list);
+        setLoading(false);
       } catch (error) {
         console.log(error);
         toast.error("Failed to fetch hotels");
+        setLoading(false);
       }
     };
     fetchData();
@@ -40,22 +43,33 @@ const NearMeDataTable = () => {
       setData(data.filter((item) => item.id !== id));
       toast.success("Hotel Deleted Successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Hotel not Deleted");
     }
   };
 
+
+
   const fetchRooms = async (hotelId) => {
+    setLoading(true);
     try {
       const roomsSnapshot = await getDocs(collection(db, "hotels", hotelId, "rooms"));
-      const roomsList = roomsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const roomsList = roomsSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log("Room data:", data); // Debug log
+        return {
+          id: doc.id,
+          ...data,
+          imageUrl: data.imageUrl || null // Ensure imageUrl always exists
+        };
+      });
       setRooms(roomsList);
       setSelectedHotel(hotelId);
+      setLoading(false);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Failed to fetch rooms");
+      setLoading(false);
     }
   };
 
@@ -72,6 +86,7 @@ const NearMeDataTable = () => {
 
   const handleRoomUpdate = (hotelId, roomId) => {
     toast.info(`Updating room ${roomId} for hotel ${hotelId}`);
+    // Implement room update logic here
   };
 
   const actionColumn = [
@@ -102,6 +117,7 @@ const NearMeDataTable = () => {
       },
     },
   ];
+  
 
   const columns = [
     { field: 'no', headerName: 'No', width: 70 },
@@ -158,18 +174,27 @@ const NearMeDataTable = () => {
       field: 'imageUrl', 
       headerName: 'Image', 
       width: 100,
-      renderCell: (params) => (
-        <img 
-          src={params.value} 
-          alt="Room"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ),
+      renderCell: (params) => {
+        console.log("Room image URL:", params.value); // Debug log
+        return params.value ? (
+          <img 
+            src={params.value} 
+            alt="Room"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <span>No image</span>
+        );
+      },
     },
     { field: 'pricePerNight', headerName: 'Price Per Night', width: 150 },
     { field: 'type', headerName: 'Type', width: 150 },
     ...roomActionColumn
   ];
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="dataTable">
